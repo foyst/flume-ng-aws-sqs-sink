@@ -4,3 +4,7 @@ target
 *.iml
 *.ipl
 
+.idea/
+gradle/
+gradlew
+gradlew.bat
