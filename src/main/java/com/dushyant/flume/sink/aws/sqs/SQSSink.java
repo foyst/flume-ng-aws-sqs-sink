@@ -156,7 +156,11 @@ public class SQSSink extends AbstractSink implements Configurable {
         final boolean alwaysBatch = context.getBoolean("alwaysBatch", true);
         LOG.debug("alwaysBatch:{}", alwaysBatch);
 
-        final AmazonSQSClientFactory clientFactory = new AmazonSQSClientFactory(context);
+        final String awsAccessKey = resolve(context.getString("awsAccessKey", "env.AWS_ACCESS_KEY"));
+        final String awsSecretKey = resolve(context.getString("awsSecretKey", "env.AWS_SECRET_KEY"));
+        final String awsSessionToken = resolve(context.getString("awsSecretKey", "env.AWS_SESSION_TOKEN"));
+        LOG.debug("awsAccessKey:{}", awsAccessKey);
+        final AmazonSQSClientFactory clientFactory = new AmazonSQSClientFactory(awsAccessKey, awsSecretKey, awsSessionToken);
 
         // TODO: Add dynamic reconfiguration support
         if (sqsMsgSender == null) {
