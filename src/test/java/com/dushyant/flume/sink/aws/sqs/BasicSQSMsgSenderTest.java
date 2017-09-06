@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 import org.apache.flume.Channel;
@@ -38,17 +39,20 @@ import org.junit.Test;
 public class BasicSQSMsgSenderTest {
     @Test
     public void testSend() throws Exception {
-        BasicSQSMsgSender msgSender =
-            new BasicSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey");
 
         Channel mockChannel = mock(Channel.class);
         Event mockEvent = mock(Event.class);
         when(mockEvent.getBody()).thenReturn("This is a test event message".getBytes());
         when(mockChannel.take()).thenReturn(mockEvent);
 
-        AmazonSQS mockSqs = mock(AmazonSQS.class);
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
+
+        BasicSQSMsgSender msgSender =
+                new BasicSQSMsgSender(clientFactory,"https://some-fake/url", "us-east-1");
+
         when(mockSqs.sendMessage(any(SendMessageRequest.class))).thenReturn(new SendMessageResult());
-        msgSender.setAmazonSQS(mockSqs);
 
         int eventCount = msgSender.send(mockChannel);
         assertEquals(1, eventCount);
@@ -56,15 +60,18 @@ public class BasicSQSMsgSenderTest {
 
     @Test
     public void testSendEmptyChannel() throws Exception {
-        BasicSQSMsgSender msgSender =
-            new BasicSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey");
 
         Channel mockChannel = mock(Channel.class);
         when(mockChannel.take()).thenReturn(null);
 
-        AmazonSQS mockSqs = mock(AmazonSQS.class);
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
+
+        BasicSQSMsgSender msgSender =
+                new BasicSQSMsgSender(clientFactory,"https://some-fake/url", "us-east-1");
+
         when(mockSqs.sendMessage(any(SendMessageRequest.class))).thenReturn(new SendMessageResult());
-        msgSender.setAmazonSQS(mockSqs);
 
         int eventCount = msgSender.send(mockChannel);
         assertEquals(0, eventCount);
@@ -72,17 +79,20 @@ public class BasicSQSMsgSenderTest {
 
     @Test
     public void testSendEventWithEmptyBody() throws Exception {
-        BasicSQSMsgSender msgSender =
-            new BasicSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey");
 
         Channel mockChannel = mock(Channel.class);
         Event mockEvent = mock(Event.class);
         when(mockEvent.getBody()).thenReturn("".getBytes());
         when(mockChannel.take()).thenReturn(mockEvent);
 
-        AmazonSQS mockSqs = mock(AmazonSQS.class);
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
+
+        BasicSQSMsgSender msgSender =
+                new BasicSQSMsgSender(clientFactory,"https://some-fake/url", "us-east-1");
+
         when(mockSqs.sendMessage(any(SendMessageRequest.class))).thenReturn(new SendMessageResult());
-        msgSender.setAmazonSQS(mockSqs);
 
         int eventCount = msgSender.send(mockChannel);
         assertEquals(0, eventCount);
@@ -90,36 +100,42 @@ public class BasicSQSMsgSenderTest {
 
     @Test(expected = EventDeliveryException.class)
     public void testSendFailureAmazonServiceException() throws Exception {
-        BasicSQSMsgSender msgSender =
-            new BasicSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey");
 
         Channel mockChannel = mock(Channel.class);
         Event mockEvent = mock(Event.class);
         when(mockEvent.getBody()).thenReturn("This is a test event message".getBytes());
         when(mockChannel.take()).thenReturn(mockEvent);
 
-        AmazonSQS mockSqs = mock(AmazonSQS.class);
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
+
+        BasicSQSMsgSender msgSender =
+                new BasicSQSMsgSender(clientFactory,"https://some-fake/url", "us-east-1");
+
         when(mockSqs.sendMessage(any(SendMessageRequest.class)))
             .thenThrow(new AmazonServiceException("Mock AmazonServiceException"));
-        msgSender.setAmazonSQS(mockSqs);
 
         msgSender.send(mockChannel);
     }
 
     @Test(expected = EventDeliveryException.class)
     public void testSendFailureAmazonClientException() throws Exception {
-        BasicSQSMsgSender msgSender =
-            new BasicSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey");
 
         Channel mockChannel = mock(Channel.class);
         Event mockEvent = mock(Event.class);
         when(mockEvent.getBody()).thenReturn("This is a test event message".getBytes());
         when(mockChannel.take()).thenReturn(mockEvent);
 
-        AmazonSQS mockSqs = mock(AmazonSQS.class);
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
+
+        BasicSQSMsgSender msgSender =
+                new BasicSQSMsgSender(clientFactory,"https://some-fake/url", "us-east-1");
+
         when(mockSqs.sendMessage(any(SendMessageRequest.class)))
             .thenThrow(new AmazonClientException("Mock AmazonClientException"));
-        msgSender.setAmazonSQS(mockSqs);
 
         msgSender.send(mockChannel);
     }

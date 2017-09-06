@@ -16,6 +16,7 @@
 package com.dushyant.flume.sink.aws.sqs;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.UnsupportedEncodingException;
@@ -25,6 +26,7 @@ import java.util.List;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
@@ -62,8 +64,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatches() throws Exception {
+
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
+
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
 
         byte[] mockMsgPayload = {'A', 'b'};
         Event mockEvent = Mockito.mock(Event.class);
@@ -82,6 +87,13 @@ public class BatchSQSMsgSenderTest {
         Assert.assertEquals(5, msgEntries.size());
 
         assertCorrectPayloadInEntries(mockMsgPayload, msgEntries);
+    }
+
+    private AmazonSQSClientFactory createAmazonSQSClientFactory() {
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
+        return clientFactory;
     }
 
     /**
@@ -111,9 +123,11 @@ public class BatchSQSMsgSenderTest {
         String mockMsg = "Test with some invalid chars at the end 0%2F>^F";
         byte[] origPayloadWithInvalidChars = ArrayUtils.add(mockMsg.getBytes(), invalidCharByte);
 
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
+
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 1,
-                origPayloadWithInvalidChars.length);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 1,
+                        origPayloadWithInvalidChars.length);
 
         Event mockEvent = Mockito.mock(Event.class);
         when(mockEvent.getBody()).thenReturn(origPayloadWithInvalidChars);
@@ -150,8 +164,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesEmptyChannel() throws Exception {
+
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
+
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
 
         Channel mockChannel = Mockito.mock(Channel.class);
         when(mockChannel.take()).thenReturn(null);
@@ -178,8 +195,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesEventWithEmptyBody() throws Exception {
+
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
+
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
 
         Channel mockChannel = Mockito.mock(Channel.class);
         Event mockEvent = Mockito.mock(Event.class);
@@ -209,8 +229,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesEmptyChannelAfterFirstTake() throws Exception {
+
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
+
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
         byte[] mockMsgPayload = {'A', 'b'};
         Event mockEvent = Mockito.mock(Event.class);
         when(mockEvent.getBody()).thenReturn(mockMsgPayload);
@@ -247,8 +270,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesEmptyChannelAfterLastTake() throws Exception {
+
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
+
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
         byte[] mockMsgPayload = {'A', 'b'};
         Event mockEvent = Mockito.mock(Event.class);
         when(mockEvent.getBody()).thenReturn(mockMsgPayload);
@@ -286,8 +312,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesEmptyChannelInTheMiddle() throws Exception {
+
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
+
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
         byte[] mockMsgPayload = {'A', 'b'};
         Event mockEvent = Mockito.mock(Event.class);
         when(mockEvent.getBody()).thenReturn(mockMsgPayload);
@@ -324,8 +353,10 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesEmptyEventInTheMiddle() throws Exception {
+
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
         byte[] mockMsgPayload = {'A', 'b'};
         byte[] mockEmptyMsgPayload = {};
         Event mockEvent = Mockito.mock(Event.class);
@@ -367,8 +398,9 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesExceedingSize() throws Exception {
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
 
         byte[] mockMsgPayload = {'A', 'b', '~'};
         Event mockEvent = Mockito.mock(Event.class);
@@ -413,8 +445,9 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testCreateBatchesExceedingSizeLimitedChannel() throws Exception {
+        AmazonSQSClientFactory clientFactory = createAmazonSQSClientFactory();
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
 
         byte[] mockMsgPayload = {'^', '@', '~'};
         Event mockEvent = Mockito.mock(Event.class);
@@ -446,9 +479,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test
     public void testSend() throws Exception {
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
-        AmazonSQS mockSqs = Mockito.mock(AmazonSQS.class);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
         when(mockSqs.sendMessageBatch(any(SendMessageBatchRequest.class))).thenReturn(new SendMessageBatchResult());
         sqsMsgSender.setAmazonSQS(mockSqs);
 
@@ -480,10 +515,12 @@ public class BatchSQSMsgSenderTest {
         int failedMsgCount = 1;
         int expectedSuccessCount = batchSize - failedMsgCount;
 
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey",
-                batchSize, 100);
-        AmazonSQS mockSqs = Mockito.mock(AmazonSQS.class);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1",
+                        batchSize, 100);
 
         SendMessageBatchResult mockResult = mockBatchResult(batchSize, expectedSuccessCount);
 
@@ -514,8 +551,8 @@ public class BatchSQSMsgSenderTest {
         List<BatchResultErrorEntry> failedEntries = new ArrayList<BatchResultErrorEntry>();
         for (int i = expectedSuccessCount; i < batchSize; i++) {
             failedEntries.add(
-                new BatchResultErrorEntry().withId(String.valueOf(i + 1)).withCode("401").withSenderFault(true)
-                    .withMessage("Invalid binary character"));
+                    new BatchResultErrorEntry().withId(String.valueOf(i + 1)).withCode("401").withSenderFault(true)
+                            .withMessage("Invalid binary character"));
         }
         when(mockResult.getFailed()).thenReturn(failedEntries);
         return mockResult;
@@ -536,10 +573,12 @@ public class BatchSQSMsgSenderTest {
         int failedMsgCount = batchSize;
         int expectedSuccessCount = batchSize - failedMsgCount;
 
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey",
-                batchSize, 100);
-        AmazonSQS mockSqs = Mockito.mock(AmazonSQS.class);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1",
+                        batchSize, 100);
 
         SendMessageBatchResult mockResult = mockBatchResult(batchSize, expectedSuccessCount);
 
@@ -556,8 +595,7 @@ public class BatchSQSMsgSenderTest {
 
         try {
             sqsMsgSender.send(mockChannel);
-        }
-        catch (EventDeliveryException ede) {
+        } catch (EventDeliveryException ede) {
             // Make sure that the original payload is also part of the exception error messsage body
             // to get the failed payloads logged along with errors
             Assert.assertTrue(ede.getMessage().contains(msgBody));
@@ -574,9 +612,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test(expected = EventDeliveryException.class)
     public void testSendFailureAmazonServiceException() throws Exception {
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
-        AmazonSQS mockSqs = Mockito.mock(AmazonSQS.class);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
         when(mockSqs.sendMessageBatch(any(SendMessageBatchRequest.class))).thenThrow(AmazonServiceException.class);
         sqsMsgSender.setAmazonSQS(mockSqs);
 
@@ -598,9 +638,11 @@ public class BatchSQSMsgSenderTest {
      */
     @Test(expected = EventDeliveryException.class)
     public void testSendFailureAmazonClientException() throws Exception {
+        AmazonSQSClient mockSqs = mock(AmazonSQSClient.class);
+        AmazonSQSClientFactory clientFactory = mock(AmazonSQSClientFactory.class);
+        when(clientFactory.createClient()).thenReturn(mockSqs);
         BatchSQSMsgSender sqsMsgSender =
-            new BatchSQSMsgSender("https://some-fake/url", "us-east-1", "someAwsAccessKey", "someAwsSecretKey", 5, 10);
-        AmazonSQS mockSqs = Mockito.mock(AmazonSQS.class);
+                new BatchSQSMsgSender(clientFactory, "https://some-fake/url", "us-east-1", 5, 10);
         when(mockSqs.sendMessageBatch(any(SendMessageBatchRequest.class))).thenThrow(AmazonClientException.class);
         sqsMsgSender.setAmazonSQS(mockSqs);
 
@@ -615,7 +657,7 @@ public class BatchSQSMsgSenderTest {
     }
 
     private void assertCorrectPayloadInEntries(byte[] mockMsgPayload, List<SendMessageBatchRequestEntry> msgEntries)
-        throws UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         for (SendMessageBatchRequestEntry entry : msgEntries) {
             Assert.assertNotNull(entry);
             Assert.assertEquals(new String(mockMsgPayload, "UTF-8"), entry.getMessageBody());

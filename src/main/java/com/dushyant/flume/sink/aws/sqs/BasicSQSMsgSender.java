@@ -44,28 +44,16 @@ import org.slf4j.LoggerFactory;
 public class BasicSQSMsgSender implements SQSMsgSender {
     private static final Logger LOG = LoggerFactory.getLogger(BasicSQSMsgSender.class);
 
-    private String sqsUrl = null;
-    private String region = null;
-    private String awsAccessKey = null;
-    private String awsSecretKey = null;
+    private final String sqsUrl;
+    private final String region;
 
     private AmazonSQS amazonSQS = null;
 
-    public BasicSQSMsgSender(String sqsUrl, String region, String awsAccessKey, String awsSecretKey) {
+    public BasicSQSMsgSender(final AmazonSQSClientFactory clientFactory, final String sqsUrl, final String region) {
         this.sqsUrl = sqsUrl;
         this.region = region;
-        this.awsAccessKey = awsAccessKey;
-        this.awsSecretKey = awsSecretKey;
 
-        AmazonSQS sqs = null;
-        if (StringUtils.isBlank(awsAccessKey) || StringUtils.isBlank(awsSecretKey)) {
-            LOG.warn("Either awsAccessKey or awsSecretKey not specified. Will use DefaultAWSCredentialsProviderChain " +
-                "to look for AWS credentials.");
-            sqs = new AmazonSQSClient();
-        }
-        else {
-            sqs = new AmazonSQSClient(new BasicAWSCredentials(this.awsAccessKey, this.awsSecretKey));
-        }
+        AmazonSQS sqs = clientFactory.createClient();
 
         Region sqsRegion = Region.getRegion(Regions.fromName(this.region));
         sqs.setRegion(sqsRegion);
@@ -97,9 +85,5 @@ public class BasicSQSMsgSender implements SQSMsgSender {
             throw new EventDeliveryException("Character set UTF-8 not supported.", e);
         }
         return eventProcessedCounter;
-    }
-
-    public void setAmazonSQS(AmazonSQS amazonSQS) {
-        this.amazonSQS = amazonSQS;
     }
 }

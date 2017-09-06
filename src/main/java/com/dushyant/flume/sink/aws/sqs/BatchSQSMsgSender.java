@@ -56,26 +56,14 @@ public class BatchSQSMsgSender implements SQSMsgSender {
     private int batchSize;
     private String sqsUrl = null;
     private String region = null;
-    private String awsAccessKey = null;
-    private String awsSecretKey = null;
     private AmazonSQS amazonSQS = null;
 
-    public BatchSQSMsgSender(String sqsUrl, String region, String awsAccessKey, String awsSecretKey, int batchSize,
-        long maxMessageSize) {
+    public BatchSQSMsgSender(final AmazonSQSClientFactory clientFactory, String sqsUrl, String region, int batchSize,
+                             long maxMessageSize) {
         this.sqsUrl = sqsUrl;
         this.region = region;
-        this.awsAccessKey = awsAccessKey;
-        this.awsSecretKey = awsSecretKey;
 
-        AmazonSQS sqs = null;
-        if (StringUtils.isBlank(awsAccessKey) || StringUtils.isBlank(awsSecretKey)) {
-            LOG.warn("Either awsAccessKey or awsSecretKey not specified. Will use DefaultAWSCredentialsProviderChain " +
-                "to look for AWS credentials.");
-            sqs = new AmazonSQSClient();
-        }
-        else {
-            sqs = new AmazonSQSClient(new BasicAWSCredentials(this.awsAccessKey, this.awsSecretKey));
-        }
+        AmazonSQS sqs = clientFactory.createClient();
 
         Region sqsRegion = Region.getRegion(Regions.fromName(this.region));
         sqs.setRegion(sqsRegion);

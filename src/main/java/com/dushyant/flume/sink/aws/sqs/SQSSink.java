@@ -29,6 +29,8 @@ import org.apache.flume.sink.AbstractSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.dushyant.flume.sink.aws.sqs.ContextUtils.resolve;
+
 /**
  * An <a href="https://flume.apache.org/">Apache Flume</a> sink for <a href="http://aws.amazon.com/sqs/">Amazon Simple
  * Queue Service (Amazon SQS).</a>. <b>Configuration Properties:</b> <table summary="" border=1>
@@ -136,10 +138,6 @@ public class SQSSink extends AbstractSink implements Configurable {
         final String region = resolve(context.getString("region", "us-east-1"));
         LOG.debug("region:{}", region);
 
-        final String awsAccessKey = resolve(context.getString("awsAccessKey", "env.AWS_ACCESS_KEY"));
-        final String awsSecretKey = resolve(context.getString("awsSecretKey", "env.AWS_SECRET_KEY"));
-        LOG.debug("awsAccessKey:{}", awsAccessKey);
-
         this.batchSize = context.getInteger("batchSize", 10);
         Preconditions.checkState(1 <= batchSize && batchSize <= 10,
             "Invalid batchSize specified. The batchSize must be a positive integer between 1 and 10 " +
@@ -158,42 +156,24 @@ public class SQSSink extends AbstractSink implements Configurable {
         final boolean alwaysBatch = context.getBoolean("alwaysBatch", true);
         LOG.debug("alwaysBatch:{}", alwaysBatch);
 
+        final AmazonSQSClientFactory clientFactory = new AmazonSQSClientFactory(context);
+
         // TODO: Add dynamic reconfiguration support
         if (sqsMsgSender == null) {
             if (alwaysBatch || batchSize > 1) {
                 LOG.info("Using sqsMsgSender:{}", BatchSQSMsgSender.class);
                 sqsMsgSender =
-                    new BatchSQSMsgSender(sqsUrl, region, awsAccessKey, awsSecretKey, batchSize, maxMessageSize);
+                    new BatchSQSMsgSender(clientFactory, sqsUrl, region, batchSize, maxMessageSize);
             }
             else {
                 LOG.info("Using sqsMsgSender:{}", BasicSQSMsgSender.class);
-                sqsMsgSender = new BasicSQSMsgSender(sqsUrl, region, awsAccessKey, awsSecretKey);
+                sqsMsgSender = new BasicSQSMsgSender(clientFactory, sqsUrl, region);
             }
         }
 
         if (sinkCounter == null) {
             sinkCounter = new SinkCounter(getName());
         }
-    }
-
-    /**
-     * The method for resolving the configured property value.
-     * <p>
-     * For example, the configuration allows properties to be specified in the {@code env.propertyName} format. This
-     * method resolves that configuration property value using the environment variable named {@code propertyName}. In
-     * other cases, the method returns the given property as is.
-     *
-     * @param property The configured property value to be resolved
-     *
-     * @return The resolved property value
-     */
-    protected String resolve(String property) {
-        String resolved = property;
-        if (StringUtils.isNotBlank(property) && property.startsWith("env.")) {
-            String envVariableName = StringUtils.substringAfter(property, "env.");
-            resolved = System.getenv(envVariableName);
-        }
-        return resolved;
     }
 
     @Override
